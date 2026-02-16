@@ -17,7 +17,7 @@
                         </label>
                     </div>
                      <p class="ml-7 text-xs text-gray-500">
-                         This server appears to be: <strong>{{ request()->server('SERVER_ADDR') ?? request()->ip() }}</strong>
+                         This server appears to be: <strong>{{ request()->getHost() }}</strong>
                      </p>
 
                     <div class="flex items-center">
@@ -48,7 +48,7 @@
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">DNS Configuration</h3>
                         <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                            <p>Ensure your domain's A Record points to this server's IP address ({{ request()->server('SERVER_ADDR') ?? request()->ip() }}) before proceeding.</p>
+                            <p>Ensure your domain's A Record points to this server's IP address ({{ request()->getHost() }}) before proceeding.</p>
                         </div>
                     </div>
                 </div>

@@ -164,7 +164,7 @@ class InstallController extends Controller
             // But for now, we just save the files. 
         } else {
              // Update APP_URL in .env to IP if that's what we have (or just keep as is)
-             $currentIp = $request->server('SERVER_ADDR') ?? $request->ip();
+             $currentIp = $request->getHost();
              if ($request->network_type === 'ip') {
                  $this->updateEnvironmentFile(['APP_URL' => 'http://' . $currentIp]);
              }
