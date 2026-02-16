@@ -15,10 +15,6 @@ class AuthenticationTest extends TestCase
     {
         $response = $this->get('/login');
 
-        if ($response->status() === 500) {
-            dump($response->content());
-        }
-
         $response->assertStatus(200);
     }
 
