@@ -88,5 +88,11 @@ echo "Fixing permissions..."
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
+# Ensure .env is writable by the web server (for installer)
+if [ -f .env ]; then
+    chown www-data:www-data .env
+    chmod 664 .env
+fi
+
 echo "OrbitDocs is ready."
 exec "$@"
