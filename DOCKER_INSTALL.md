@@ -18,15 +18,13 @@
    ```
    > **Note:** The `--build` flag is crucial for the first run to ensure the application image is built locally. If you omit it, Docker may try to pull a non-existent image and fail.
 
-3. **Install Dependencies & Configure**
+3. **Wait for Initialization**
+   The first run will take a few minutes to install dependencies (PHP & Node.js), run migrations, and build assets.
+   You can verify it's working by checking the logs:
    ```bash
-   docker-compose exec app composer install
-   docker-compose exec app php artisan key:generate
-   docker-compose exec app php artisan storage:link
-   docker-compose exec app php artisan migrate --seed
-   docker-compose exec app npm install
-   docker-compose exec app npm run build
+   docker-compose logs -f app
    ```
+   Once you see **"OrbitDocs is ready"**, the app is live.
 
 4. **Access Application**
    Visit `http://localhost:8000`
