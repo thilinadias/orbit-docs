@@ -9,10 +9,21 @@ fi
 
 # Ensure .env has Linux line endings (fix for Windows-edited files)
 if [ -f .env ]; then
-    dos2unix .env
+    dos2unix .env || true
 fi
 
-# Fix DB_HOST in .env for Docker environment
+# ... (omitted middle section for brevity, targeting specific chunks)
+
+# Fix permissions for storage and bootstrap/cache (critical for log files created by root)
+echo "Fixing permissions..."
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache || true
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache || true
+
+# Ensure .env is writable by the web server (for installer)
+if [ -f .env ]; then
+    chown www-data:www-data .env || true
+    chmod 664 .env || true
+fi
 if grep -q "DB_HOST=127.0.0.1" .env; then
     echo "Updating DB_HOST to 'db'..."
     sed -i 's/DB_HOST=127.0.0.1/DB_HOST=db/g' .env
