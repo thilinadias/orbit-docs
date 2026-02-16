@@ -7,6 +7,12 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
+# Fix DB_HOST in .env for Docker environment
+if grep -q "DB_HOST=127.0.0.1" .env; then
+    echo "Updating DB_HOST to 'db' for Docker..."
+    sed -i 's/DB_HOST=127.0.0.1/DB_HOST=db/g' .env
+fi
+
 # Install Composer dependencies if missing
 if [ ! -d "vendor" ]; then
     echo "Installing Composer dependencies..."
@@ -23,9 +29,20 @@ fi
 echo "Waiting for Database..."
 sleep 10
 
-# Run Migrations
+# Run Migrations with Retry Logic
 echo "Running Migrations..."
-php artisan migrate --force
+max_retries=30
+count=0
+until php artisan migrate --force; do
+    exit_code=$?
+    count=$((count + 1))
+    if [ $count -ge $max_retries ]; then
+        echo "Migration failed after $count attempts. Exiting."
+        exit $exit_code
+    fi
+    echo "Migration failed (Attempt $count/$max_retries). Retrying in 5 seconds..."
+    sleep 5
+done
 
 # Create Storage Link
 if [ ! -L "public/storage" ]; then
