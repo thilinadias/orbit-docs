@@ -29,21 +29,18 @@
                 <div class="relative z-10 flex flex-col items-center text-center max-w-lg">
                     <!-- Logo -->
                     <div class="mb-8 p-4 bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl">
-                        @if($logo = \App\Models\Setting::get('system_logo'))
-                            <img src="{{ asset('storage/' . $logo) }}" alt="Logo" class="w-24 h-24 object-contain">
-                        @else
-                            <x-application-logo class="w-24 h-24 fill-current text-white" />
-                        @endif
+                        {{-- Force Default Logo for now --}}
+                        <x-application-logo class="w-24 h-24 fill-current text-white" />
                     </div>
                     
                     <!-- System Name -->
                     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
-                        {{ \App\Models\Setting::get('system_name', 'OrbitDocs') }}
+                        OrbitDocs
                     </h1>
                     
                     <!-- Tagline/Description -->
                     <p class="text-lg text-gray-300 mb-8 font-light">
-                        {{ \App\Models\Setting::get('system_description', 'Secure Documentation & Asset Management for MSPs.') }}
+                        Secure Documentation & Asset Management for MSPs.
                     </p>
 
                     <p class="text-sm text-gray-400 font-medium">
@@ -67,7 +64,7 @@
                     {{ $slot }}
                     
                     <div class="mt-8 text-center text-xs text-gray-400">
-                        &copy; {{ date('Y') }} {{ \App\Models\Setting::get('system_name', 'OrbitDocs') }}. All rights reserved.
+                        &copy; {{ date('Y') }} OrbitDocs. All rights reserved.
                     </div>
                 </div>
             </div>
