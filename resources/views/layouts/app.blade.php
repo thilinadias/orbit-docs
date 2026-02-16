@@ -98,10 +98,9 @@
 
                             @if($hideSidebar ?? false)
                                 <a class="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center mr-8" href="{{ route('root') }}">
-                                    @if($logo = \App\Models\Setting::get('system_logo'))
-                                        <img src="{{ asset('storage/' . $logo) }}" alt="System Logo" class="h-8 w-auto mr-3 grayscale brightness-125 hover:grayscale-0 transition-all">
-                                    @endif
-                                    <span class="hidden lg:inline-block font-extrabold tracking-tighter">{{ \App\Models\Setting::get('system_name', 'OrbitDocs') }}</span>
+                                    {{-- Force Default Logo --}}
+                                    <x-application-logo class="h-8 w-8 mr-3 fill-current text-purple-600" />
+                                    <span class="hidden lg:inline-block font-extrabold tracking-tighter">OrbitDocs</span>
                                 </a>
                             @endif
 
