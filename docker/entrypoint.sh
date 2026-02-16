@@ -83,5 +83,10 @@ fi
 # Cache configuration if .env is valid (skip if it's the default dummy env)
 # php artisan config:cache
 
+# Fix permissions for storage and bootstrap/cache (critical for log files created by root)
+echo "Fixing permissions..."
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
 echo "OrbitDocs is ready."
 exec "$@"
