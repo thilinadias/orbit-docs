@@ -1,0 +1,71 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: orbitdocs-app
+    container_name: orbitdocs-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - orbitdocs_data:/var/www/storage/app
+      - orbitdocs_env:/var/www/env_storage
+      - ./:/var/www # Development mount (Optional: Remove for prod image build)
+      - ./storage/logs:/var/www/storage/logs
+      - orbitdocs_ssl:/etc/nginx/ssl
+    networks:
+      - orbitdocs-network
+
+  web:
+    image: nginx:alpine
+    container_name: orbitdocs-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - orbitdocs_ssl:/etc/nginx/ssl
+    networks:
+      - orbitdocs-network
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: orbitdocs-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-orbitdocs}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-orbitdocs}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - orbitdocs_db:/var/lib/mysql
+    networks:
+      - orbitdocs-network
+
+  redis:
+    image: redis:alpine
+    container_name: orbitdocs-redis
+    restart: unless-stopped
+    networks:
+      - orbitdocs-network
+
+networks:
+  orbitdocs-network:
+    driver: bridge
+
+volumes:
+  orbitdocs_db:
+    driver: local
+  orbitdocs_data:
+    driver: local
+  orbitdocs_env:
+    driver: local
+  orbitdocs_ssl:
+    driver: local
