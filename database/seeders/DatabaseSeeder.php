@@ -18,15 +18,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Roles
-        $roles = ['Super Admin', 'Admin', 'Technician', 'Read-Only'];
-        foreach ($roles as $role) {
-            Role::create(['name' => $role, 'label' => $role]);
-        }
-
+        // 1. Run RBAC Seeder (Creates Roles & Permissions)
         $this->call([
+            RolesPermissionsSeeder::class,
             ITGlueAssetSeeder::class,
-            ITGlueDemoDataSeeder::class,
+            // ITGlueDemoDataSeeder::class, // Optional: Comment out if not needed for production
         ]);
 
         // Default Admin User
