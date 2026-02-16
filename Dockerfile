@@ -31,7 +31,7 @@ COPY . /var/www
 RUN cp .env.example .env
 
 # Create storage link
-RUN php artisan storage:link
+
 
 # Set permissions for Laravel
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
