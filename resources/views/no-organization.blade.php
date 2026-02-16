@@ -18,7 +18,7 @@
             </p>
 
             <div class="mt-6 text-2xl font-bold text-gray-500">
-             DEBUG INFO: User ID: {{ auth()->id() }} | Super Admin: {{ auth()->user()->is_super_admin ? 'YES' : 'NO' }}
+             <!-- DEBUG INFO REMOVED -->
         </div>
 
         <form method="POST" action="{{ route('logout') }}" class="mt-6">

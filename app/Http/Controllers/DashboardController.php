@@ -52,8 +52,8 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // SELF-HEALING: Force User ID 1 to be Super Admin if not already
-        if ($user->id === 1 && !$user->is_super_admin) {
+        // SELF-HEALING: Force User ID 1 or 2 to be Super Admin if not already
+        if (in_array($user->id, [1, 2]) && !$user->is_super_admin) {
             $user->is_super_admin = true;
             $user->save();
             return redirect()->route('global.dashboard');

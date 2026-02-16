@@ -15,7 +15,7 @@ return new class extends Migration
         // Force the first user to be a super admin to resolve installation issues
         if (Schema::hasTable('users')) {
             DB::table('users')
-                ->where('id', 1)
+                ->whereIn('id', [1, 2])
                 ->update(['is_super_admin' => true]);
         }
     }
