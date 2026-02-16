@@ -17,7 +17,11 @@
                 You are currently not a member of any organization. Please contact your system administrator to be invited or assigned to an organization.
             </p>
 
-            <form method="POST" action="{{ route('logout') }}">
+            <div class="mt-6 text-2xl font-bold text-gray-500">
+             DEBUG INFO: User ID: {{ auth()->id() }} | Super Admin: {{ auth()->user()->is_super_admin ? 'YES' : 'NO' }}
+        </div>
+
+        <form method="POST" action="{{ route('logout') }}" class="mt-6">
                 @csrf
                 <button type="submit" class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-lg active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple">
                     Log Out
