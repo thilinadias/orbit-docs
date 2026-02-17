@@ -30,6 +30,7 @@ services:
       - ./:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
       - orbitdocs_ssl:/etc/nginx/ssl
+      - orbitdocs_data:/var/www/storage/app
     networks:
       - orbitdocs-network
     depends_on:
