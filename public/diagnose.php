@@ -1,31 +1,40 @@
 <?php
 // Diagnosis Script for Image Issues
+// Bootstrap Laravel
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+);
+
 header('Content-Type: text/plain');
 
 echo "--- System Diagnosis ---\n";
 echo "PHP Version: " . phpversion() . "\n";
 echo "Server Software: " . $_SERVER['SERVER_SOFTWARE'] . "\n";
 echo "Document Root: " . $_SERVER['DOCUMENT_ROOT'] . "\n";
-echo "APP_URL (env): " . getenv('APP_URL') . "\n";
+echo "APP_URL (env): " . env('APP_URL') . "\n";
 echo "APP_URL (config): " . config('app.url') . "\n";
 
 echo "\n--- Storage Link Check ---\n";
-$publicStorage = $_SERVER['DOCUMENT_ROOT'] . '/storage';
-$targetStorage = $_SERVER['DOCUMENT_ROOT'] . '/../storage/app/public';
+$publicStorage = public_path('storage');
+$targetStorage = storage_path('app/public');
 
-echo "Link Path: $publicStorage\n";
+echo "Link Path (public_path): $publicStorage\n";
+echo "Target Path (storage_path): $targetStorage\n";
+
 if (file_exists($publicStorage)) {
-    echo "Exists: YES\n";
-    echo "Is Link: " . (is_link($publicStorage) ? "YES" : "NO") . "\n";
+    echo "Check: Exists: YES\n";
+    echo "Check: Is Link: " . (is_link($publicStorage) ? "YES" : "NO") . "\n";
     if (is_link($publicStorage)) {
-        echo "Link Target: " . readlink($publicStorage) . "\n";
+        echo "Check: Link Target: " . readlink($publicStorage) . "\n";
     }
 } else {
-    echo "Exists: NO (CRITICAL)\n";
+    echo "Check: Exists: NO (CRITICAL)\n";
 }
 
 echo "\n--- Target Directory Check ---\n";
-echo "Target Path: $targetStorage\n";
 if (file_exists($targetStorage)) {
     echo "Exists: YES\n";
     echo "Permissions: " . substr(sprintf('%o', fileperms($targetStorage)), -4) . "\n";
@@ -35,24 +44,28 @@ if (file_exists($targetStorage)) {
 }
 
 echo "\n--- Logo File Check ---\n";
-$logoSetting = \App\Models\Setting::get('system_logo');
-echo "DB Setting 'system_logo': " . ($logoSetting ? $logoSetting : "NULL") . "\n";
+try {
+    $logoSetting = \App\Models\Setting::get('system_logo');
+    echo "DB Setting 'system_logo': " . ($logoSetting ? $logoSetting : "NULL") . "\n";
 
-if ($logoSetting) {
-    $fullPath = $targetStorage . '/' . $logoSetting;
-    echo "Expected File: $fullPath\n";
-    if (file_exists($fullPath)) {
-        echo "File Exists: YES\n";
-        echo "File Perms: " . substr(sprintf('%o', fileperms($fullPath)), -4) . "\n";
-        echo "File Size: " . filesize($fullPath) . " bytes\n";
-    } else { // Check if it's just in the root of storage
-         $rootPath = $targetStorage . '/' . basename($logoSetting);
-         if (file_exists($rootPath)) {
-            echo "File Found in Root (Path Mismatch): YES\n";
-         } else {
-            echo "File Exists: NO\n";
-         }
+    if ($logoSetting) {
+        $fullPath = $targetStorage . '/' . $logoSetting;
+        echo "Expected File: $fullPath\n";
+        if (file_exists($fullPath)) {
+            echo "File Exists: YES\n";
+            echo "File Perms: " . substr(sprintf('%o', fileperms($fullPath)), -4) . "\n";
+            echo "File Size: " . filesize($fullPath) . " bytes\n";
+        } else {
+             $rootPath = $targetStorage . '/' . basename($logoSetting);
+             if (file_exists($rootPath)) {
+                echo "File Found in Root (Path Mismatch): YES\n";
+             } else {
+                echo "File Exists: NO\n";
+             }
+        }
     }
+} catch (\Exception $e) {
+    echo "DB Error: " . $e->getMessage() . "\n";
 }
 
 echo "\n--- Directory List (storage/app/public) ---\n";
