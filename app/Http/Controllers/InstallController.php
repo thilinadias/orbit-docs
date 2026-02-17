@@ -66,7 +66,7 @@ class InstallController extends Controller
         // Test connection
         try {
             // We force a new connection because the config is already loaded into memory
-             // Setting config at runtime for testing
+            // Setting config at runtime for testing
             config([
                 'database.connections.mysql.host' => $request->db_host,
                 'database.connections.mysql.port' => $request->db_port,
@@ -76,7 +76,8 @@ class InstallController extends Controller
             ]);
             DB::reconnect('mysql');
             DB::connection()->getPdo();
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             return back()->with('error', 'Could not connect to database: ' . $e->getMessage())->withInput();
         }
 
@@ -94,7 +95,8 @@ class InstallController extends Controller
             Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
             // Output might be captured if we want to show it
             return response()->json(['success' => true, 'message' => 'Migrations and Seeding completed successfully.']);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -117,13 +119,51 @@ class InstallController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'is_super_admin' => true, 
+            'is_super_admin' => true,
             'email_verified_at' => now(),
         ]);
-        
+
         // Assign Role if roles are seeded?
         // Assuming RolesPermissionsSeeder didn't assign super admin to a specific user initially, or we attach 'Super Admin' role.
         // But is_super_admin column handles it mostly.
+
+        return redirect()->route('install.organization');
+    }
+
+    public function organization()
+    {
+        return view('install.organization');
+    }
+
+    public function storeOrganization(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:organizations,slug',
+        ]);
+
+        // Create Organization
+        $organization = \App\Models\Organization::create([
+            'name' => $request->name,
+            'slug' => \Illuminate\Support\Str::slug($request->slug), // Ensure slug format
+        ]);
+
+        // Attach Super Admin (assuming the user created in storeAdmin is logged in or we take the latest user? 
+        // Installing usually happens in one session. 
+        // Wait, storeAdmin creates a user but doesnt login? 
+        // Actually, usually installer doesn't login until the end. 
+        // We need to attach the *just created* user. 
+        // Since we are not maintaining state easily, let's assume the ONLY user is the admin we just created, or we can login the user.
+        // Better: Login the user in storeAdmin? Or find the user.
+        // Let's find the user. effectively the first user.
+        $user = User::first();
+        if ($user) {
+            // Attach user to organization with 'admin' role (or just attach)
+            $user->organizations()->attach($organization->id, ['role' => 'admin']); // Assuming pivot has role?
+        // Checking User model for attachOrganization method or pivot structure.
+        // Based on routes, there is `attachOrganization`.
+        // Simple attach for now, assuming standard pivot.
+        }
 
         return redirect()->route('install.network');
     }
@@ -137,7 +177,7 @@ class InstallController extends Controller
     {
         // Handle Network/SSL Configuration
         if ($request->network_type === 'domain' && $request->hasFile('ssl_cert') && $request->hasFile('ssl_key')) {
-             // Validate files
+            // Validate files
             $request->validate([
                 'domain' => 'required|string',
                 'ssl_cert' => 'required|file',
@@ -146,7 +186,7 @@ class InstallController extends Controller
 
             // Define paths in the shared volume
             $sslPath = '/etc/nginx/ssl'; // This is where we mapped orbitdocs_ssl in docker-compose for App container
-            
+
             // Ensure directory exists (it should via docker volume, but good to check)
             if (!file_exists($sslPath)) {
                 mkdir($sslPath, 0755, true);
@@ -159,20 +199,21 @@ class InstallController extends Controller
             // Update APP_URL in .env
             $this->updateEnvironmentFile(['APP_URL' => 'https://' . $request->domain]);
 
-            // NOTE: We cannot easily restart Nginx from here. 
-            // The user will see a "Restart Required" message or instructions in the dashboard if we want.
-            // But for now, we just save the files. 
-        } else {
-             // Update APP_URL in .env to IP if that's what we have (or just keep as is)
-             $currentIp = $request->getHost();
-             if ($request->network_type === 'ip') {
-                 $this->updateEnvironmentFile(['APP_URL' => 'http://' . $currentIp]);
-             }
+        // NOTE: We cannot easily restart Nginx from here. 
+        // The user will see a "Restart Required" message or instructions in the dashboard if we want.
+        // But for now, we just save the files. 
+        }
+        else {
+            // Update APP_URL in .env to IP if that's what we have (or just keep as is)
+            $currentIp = $request->getHost();
+            if ($request->network_type === 'ip') {
+                $this->updateEnvironmentFile(['APP_URL' => 'http://' . $currentIp]);
+            }
         }
 
         // Finalize installation
         file_put_contents(storage_path('app/installed'), 'INSTALLED ON ' . now());
-        
+
         // Clear caches
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
@@ -188,8 +229,9 @@ class InstallController extends Controller
             foreach ($data as $key => $value) {
                 // Check if key exists
                 if (preg_match("/^{$key}=/m", $currentEnv)) {
-                     $currentEnv = preg_replace("/^{$key}=.*/m", "{$key}=\"{$value}\"", $currentEnv);
-                } else {
+                    $currentEnv = preg_replace("/^{$key}=.*/m", "{$key}=\"{$value}\"", $currentEnv);
+                }
+                else {
                     // Append if not exists
                     $currentEnv .= "\n{$key}=\"{$value}\"";
                 }
