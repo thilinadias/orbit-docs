@@ -78,11 +78,15 @@ until php artisan migrate --force; do
     sleep 5
 done
 
-# Create Storage Link
-if [ ! -L "public/storage" ]; then
-    echo "Creating Storage Link..."
-    php artisan storage:link
+# Create Storage Link (Force remove first to avoid exists error if it's a broken link)
+if [ -L "public/storage" ]; then
+    rm "public/storage"
+elif [ -d "public/storage" ]; then
+    rm -rf "public/storage"
 fi
+
+echo "Creating Storage Link..."
+php artisan storage:link
 
 # Install NPM dependencies and build if missing
 if [ ! -d "node_modules" ] || [ ! -d "public/build" ]; then
