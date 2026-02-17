@@ -36,32 +36,34 @@ class DashboardController extends Controller
             'sites' => $organization->sites()->withCount('assets')->latest()->take(5)->get(),
             'asset_distribution' => $asset_distribution,
             'recent_activity' => $organization->activityLogs()
-                ->with(['user', 'subject'])
-                ->latest()
-                ->take(5)
-                ->get(),
+            ->with(['user', 'subject'])
+            ->latest()
+            ->take(5)
+            ->get(),
         ]);
     }
-    
+
     public function root()
     {
         return $this->global();
     }
 
-    public function global()
+    public function global ()
     {
         $user = auth()->user();
 
         // SELF-HEALING: Force User ID 1 or 2 to be Super Admin if not already
-        if (in_array($user->id, [1, 2]) && !$user->is_super_admin) {
+        // SELF-HEALING: Force User ID 1 to be Super Admin if not already
+        if ($user->id === 1 && !$user->is_super_admin) {
             $user->is_super_admin = true;
             $user->save();
-            return redirect()->route('global.dashboard');
+            return redirect()->route('root');
         }
-        
+
         if ($user->is_super_admin) {
             $organizations = Organization::with(['parent'])->withCount(['assets', 'documents'])->get();
-        } else {
+        }
+        else {
             $organizations = $user->organizations()->with(['parent'])->withCount(['assets', 'documents'])->get();
         }
 
@@ -81,37 +83,39 @@ class DashboardController extends Controller
         // Real Favorites (DB Backed)
         $favoriteRecords = $user->favorites()->with(['favoritable' => function ($morphTo) {
             $morphTo->morphWith([
-                \App\Models\Site::class => ['organization'],
-                \App\Models\Organization::class => ['parent'],
-            ]);
+                    \App\Models\Site::class => ['organization'],
+                    \App\Models\Organization::class => ['parent'],
+                ]);
         }])->get();
 
-        $favorites = $favoriteRecords->map(function($fav) {
+        $favorites = $favoriteRecords->map(function ($fav) {
             $item = $fav->favoritable;
-            if (!$item) return null;
+            if (!$item)
+                return null;
 
             if ($item instanceof \App\Models\Site) {
                 $mspName = $item->organization->name ?? 'MSP';
                 return (object)[
-                    'id' => $item->id,
-                    'name' => '[' . $mspName . '/' . $item->name . ']',
-                    'slug' => $item->organization->slug ?? '#',
-                    'logo' => $item->logo ?? $item->organization->logo ?? null,
-                    'url' => route('sites.show', ['organization' => $item->organization->slug ?? 'demo-msp', 'site' => $item->id]),
-                    'type' => 'site'
+                'id' => $item->id,
+                'name' => '[' . $mspName . '/' . $item->name . ']',
+                'slug' => $item->organization->slug ?? '#',
+                'logo' => $item->logo ?? $item->organization->logo ?? null,
+                'url' => route('sites.show', ['organization' => $item->organization->slug ?? $organizations->first()->slug ?? 'orbit', 'site' => $item->id]),
+                'type' => 'site'
                 ];
-            } else {
+            }
+            else {
                 $name = $item->name;
                 if ($item->parent) {
                     $name = '[' . $item->parent->name . '/' . $item->name . ']';
                 }
                 return (object)[
-                    'id' => $item->id,
-                    'name' => $name,
-                    'slug' => $item->slug,
-                    'logo' => $item->logo,
-                    'url' => route('dashboard', $item->slug),
-                    'type' => 'org'
+                'id' => $item->id,
+                'name' => $name,
+                'slug' => $item->slug,
+                'logo' => $item->logo,
+                'url' => route('dashboard', $item->slug),
+                'type' => 'org'
                 ];
             }
         })->filter()->take(8);
@@ -130,9 +134,9 @@ class DashboardController extends Controller
 
         // Popular This Week (Based on ActivityLog counts in last 7 days)
         $popular_items = Organization::whereIn('id', $orgIds)
-            ->withCount(['activityLogs' => function($q) {
-                $q->where('created_at', '>=', now()->subDays(7));
-            }])
+            ->withCount(['activityLogs' => function ($q) {
+            $q->where('created_at', '>=', now()->subDays(7));
+        }])
             ->orderBy('activity_logs_count', 'desc')
             ->take(3)
             ->get();
