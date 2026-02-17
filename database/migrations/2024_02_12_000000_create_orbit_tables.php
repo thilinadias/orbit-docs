@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class extends Migration 
 {
     /**
      * Run the migrations.
@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Organizations
+        Schema::dropIfExists('organizations');
         Schema::create('organizations', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -21,6 +22,7 @@ return new class extends Migration
         });
 
         // 2. Roles & Permissions (Simple RBAC)
+        Schema::dropIfExists('roles');
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique(); // Super Admin, Admin, Technician, Read-Only
@@ -28,6 +30,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('permissions');
         Schema::create('permissions', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
@@ -35,6 +38,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('permission_role');
         Schema::create('permission_role', function (Blueprint $table) {
             $table->id();
             $table->foreignId('role_id')->constrained()->cascadeOnDelete();
@@ -49,11 +53,12 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('role_id')->nullable()->constrained()->nullOnDelete(); // Role within this org
             $table->timestamps();
-            
+
             $table->unique(['organization_id', 'user_id']);
         });
 
         // 4. Asset Management
+        Schema::dropIfExists('asset_types');
         Schema::create('asset_types', function (Blueprint $table) {
             $table->id();
             $table->string('name'); // Server, Laptop, Licence, etc.
@@ -61,6 +66,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('assets');
         Schema::create('assets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
@@ -74,6 +80,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('asset_custom_fields');
         Schema::create('asset_custom_fields', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_type_id')->constrained()->cascadeOnDelete();
@@ -82,6 +89,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('asset_values');
         Schema::create('asset_values', function (Blueprint $table) {
             $table->id();
             $table->foreignId('asset_id')->constrained()->cascadeOnDelete();
@@ -91,6 +99,7 @@ return new class extends Migration
         });
 
         // 5. Credentials Vault
+        Schema::dropIfExists('credentials');
         Schema::create('credentials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
@@ -104,6 +113,7 @@ return new class extends Migration
         });
 
         // 6. Documentation System
+        Schema::dropIfExists('folders');
         Schema::create('folders', function (Blueprint $table) { // Optional structure
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
@@ -112,6 +122,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('documents');
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
@@ -121,15 +132,16 @@ return new class extends Migration
             $table->boolean('is_public')->default(false);
             $table->foreignId('last_modified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
-            
-            // Fulltext index manually added if needed, or via DB statement
+
+        // Fulltext index manually added if needed, or via DB statement
         });
-        
+
         // Fulltext index for MySQL 8
         if (DB::getDriverName() !== 'sqlite') {
             DB::statement('ALTER TABLE documents ADD FULLTEXT fulltext_index (title, content)');
         }
 
+        Schema::dropIfExists('document_versions');
         Schema::create('document_versions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('document_id')->constrained()->cascadeOnDelete();
@@ -139,6 +151,7 @@ return new class extends Migration
         });
 
         // 7. Tags
+        Schema::dropIfExists('tags');
         Schema::create('tags', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -147,6 +160,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::dropIfExists('taggables');
         Schema::create('taggables', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tag_id')->constrained()->cascadeOnDelete();
@@ -154,6 +168,7 @@ return new class extends Migration
         });
 
         // 8. Relationships (Many-to-Many Linking)
+        Schema::dropIfExists('relationships');
         Schema::create('relationships', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
@@ -164,6 +179,7 @@ return new class extends Migration
         });
 
         // 9. Activity Logs
+        Schema::dropIfExists('activity_logs');
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->nullable()->constrained()->cascadeOnDelete();
