@@ -42,6 +42,7 @@ return new class extends Migration
         });
 
         // 3. Organization User Pivot with Role
+        Schema::dropIfExists('organization_user');
         Schema::create('organization_user', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
