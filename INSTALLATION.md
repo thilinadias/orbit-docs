@@ -43,4 +43,26 @@
    php artisan serve
    ```
 
-Visit `http://localhost:8000` to access OrbitDocs.
+
+## Docker Installation (Recommended)
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/thilinadias/orbitdocs.git
+   cd orbitdocs
+   ```
+
+2. **Configure Environment**
+   ```bash
+   cp .env.example .env
+   # Ensure APP_URL is set to your server IP (e.g., http://192.168.1.100)
+   ```
+
+3. **Build and Run Containers**
+   *Note: On the first run, you MUST use `--build` to create the application image locally.*
+   ```bash
+   docker-compose up -d --build
+   ```
+
+4. **Access Application**
+   Visit `http://localhost` (or your server IP) to access OrbitDocs.
