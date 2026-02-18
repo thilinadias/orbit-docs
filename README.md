@@ -48,6 +48,7 @@ OrbitDocs is designed to be installed easily using Docker. This method includes 
     ```bash
     docker-compose up -d --build
     ```
+    *Note: The `docker-compose.yml` is configured for production by default. If you want to enable hot-reloading for development, uncomment the `./:/var/www` volume in the `app` service.*
 
 3.  **Run Database Migrations**
     Run the migrations to set up the database schema.
