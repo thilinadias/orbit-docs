@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+# Seed the shared app volume from the Docker image on first start.
+# The image has all pre-built assets (vendor/, public/build, etc.).
+# The volume is mounted at /var/www which may be empty on first run.
+if [ ! -f /var/www/artisan ]; then
+    echo "Seeding app volume from image..."
+    cp -a /var/www-image/. /var/www/
+    echo "App volume seeded."
+fi
+
 # Copy .env if not exists (for first run with volume)
 if [ ! -f .env ]; then
     echo "Creating .env file from example..."

@@ -29,11 +29,11 @@ COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www
+# Set working directory (use -image so volume mount doesn't overwrite built assets)
+WORKDIR /var/www-image
 
 # Copy existing application directory contents
-COPY . /var/www
+COPY . /var/www-image
 
 # Install dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
@@ -43,14 +43,14 @@ RUN npm install
 RUN npm run build
 
 
-# Copy .env.example to .env (will be overwritten by volume if present, but ensures file exists for build)
+# Copy .env.example to .env (will be overwritten at runtime, but ensures file exists for build)
 RUN cp .env.example .env
 
-# Create storage link
-
-
 # Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data /var/www-image/storage /var/www-image/bootstrap/cache
+
+# Set working dir back to /var/www (the actual runtime path, seeded by entrypoint)
+WORKDIR /var/www
 
 # Copy entrypoint script
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -9,9 +9,9 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
+      - orbitdocs_app:/var/www
       - orbitdocs_data:/var/www/storage/app
       - orbitdocs_env:/var/www/env_storage
-      # - ./:/var/www # Development mount (Uncomment for local development)
       - ./storage/logs:/var/www/storage/logs
       - orbitdocs_ssl:/etc/nginx/ssl
     networks:
@@ -27,7 +27,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./:/var/www
+      - orbitdocs_app:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
       - orbitdocs_ssl:/etc/nginx/ssl
       - orbitdocs_data:/var/www/storage/app
@@ -71,4 +71,6 @@ volumes:
   orbitdocs_env:
     driver: local
   orbitdocs_ssl:
+    driver: local
+  orbitdocs_app:
     driver: local
