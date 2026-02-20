@@ -1,122 +1,102 @@
 #!/bin/bash
 set -e
 
-# Seed the shared app volume from the Docker image on first start.
-# The image has all pre-built assets (vendor/, public/build, etc.).
-# The volume is mounted at /var/www which may be empty on first run.
+MARKER_FILE="/var/www/storage/.orbitdocs_initialized"
+
+# ─────────────────────────────────────────────────────────────
+# STEP 1: Seed app volume from Docker image (first run only)
+# Assets (public/build, vendor/) are baked into the image.
+# ─────────────────────────────────────────────────────────────
 if [ ! -f /var/www/artisan ]; then
-    echo "Seeding app volume from image..."
+    echo "[OrbitDocs] First run detected — seeding app volume from image..."
     cp -a /var/www-image/. /var/www/
-    echo "App volume seeded."
+    echo "[OrbitDocs] App volume seeded."
 fi
 
-# Copy .env if not exists (for first run with volume)
-if [ ! -f .env ]; then
-    echo "Creating .env file from example..."
-    cp .env.example .env
+# ─────────────────────────────────────────────────────────────
+# STEP 2: Ensure .env exists with correct values
+# ─────────────────────────────────────────────────────────────
+if [ ! -f /var/www/.env ]; then
+    echo "[OrbitDocs] Creating .env from example..."
+    cp /var/www/.env.example /var/www/.env
 fi
 
-# Ensure .env has Linux line endings (fix for Windows-edited files)
-if [ -f .env ]; then
-    dos2unix .env || true
+dos2unix /var/www/.env 2>/dev/null || true
+
+# Fix default dev values to Docker-friendly values
+sed -i 's|DB_HOST=127.0.0.1|DB_HOST=db|g'            /var/www/.env
+sed -i 's|DB_DATABASE=laravel|DB_DATABASE=orbitdocs|g' /var/www/.env
+sed -i 's|DB_USERNAME=root|DB_USERNAME=orbitdocs|g'    /var/www/.env
+sed -i 's|^DB_PASSWORD=$|DB_PASSWORD=secret|g'         /var/www/.env
+sed -i 's|REDIS_HOST=127.0.0.1|REDIS_HOST=redis|g'    /var/www/.env
+sed -i 's|APP_URL=http://localhost|APP_URL=http://'"${APP_DOMAIN:-localhost}"'|g' /var/www/.env
+
+# ─────────────────────────────────────────────────────────────
+# STEP 3: Install vendor if somehow missing (safety net)
+# Normally vendor/ is baked into the image.
+# ─────────────────────────────────────────────────────────────
+if [ ! -d /var/www/vendor ]; then
+    echo "[OrbitDocs] vendor/ missing — running composer install..."
+    cd /var/www && composer install --no-interaction --optimize-autoloader --no-dev
 fi
 
-# ... (omitted middle section for brevity, targeting specific chunks)
+# ─────────────────────────────────────────────────────────────
+# STEP 4: Generate app key if missing
+# ─────────────────────────────────────────────────────────────
+if ! grep -q "^APP_KEY=base64" /var/www/.env; then
+    echo "[OrbitDocs] Generating APP_KEY..."
+    cd /var/www && php artisan key:generate --force
+fi
 
-# Fix permissions for storage and bootstrap/cache (critical for log files created by root)
-echo "Fixing permissions..."
+# ─────────────────────────────────────────────────────────────
+# STEP 5: Fix permissions
+# ─────────────────────────────────────────────────────────────
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache || true
 chmod -R 775 /var/www/storage /var/www/bootstrap/cache || true
+chown www-data:www-data /var/www/.env && chmod 664 /var/www/.env || true
 
-# Ensure .env is writable by the web server (for installer)
-if [ -f .env ]; then
-    chown www-data:www-data .env || true
-    chmod 664 .env || true
-fi
-if grep -q "DB_HOST=127.0.0.1" .env; then
-    echo "Updating DB_HOST to 'db'..."
-    sed -i 's/DB_HOST=127.0.0.1/DB_HOST=db/g' .env
-fi
+# ─────────────────────────────────────────────────────────────
+# STEP 6: Run DB migrations in background (non-blocking)
+# This means php-fpm starts immediately while migrations run.
+# The app's GUI installer handles fresh installs.
+# On subsequent deploys, only pending migrations are applied.
+# ─────────────────────────────────────────────────────────────
+run_migrations() {
+    echo "[OrbitDocs] Waiting for database..."
+    local max_wait=60
+    local count=0
+    until cd /var/www && php artisan db:show --json > /dev/null 2>&1; do
+        count=$((count + 1))
+        if [ "$count" -ge "$max_wait" ]; then
+            echo "[OrbitDocs] Database did not become ready after ${max_wait}s. Skipping auto-migration."
+            return 1
+        fi
+        sleep 2
+    done
 
-# Fix DB_DATABASE in .env
-if grep -q "DB_DATABASE=laravel" .env; then
-    echo "Updating DB_DATABASE to 'orbitdocs'..."
-    sed -i 's/DB_DATABASE=laravel/DB_DATABASE=orbitdocs/g' .env
-fi
+    echo "[OrbitDocs] Database ready. Running pending migrations..."
+    cd /var/www && php artisan migrate --force 2>&1 && \
+        echo "[OrbitDocs] Migrations complete." || \
+        echo "[OrbitDocs] WARNING: Migrations failed. Check logs."
 
-# Fix DB_USERNAME in .env
-if grep -q "DB_USERNAME=root" .env; then
-    echo "Updating DB_USERNAME to 'orbitdocs'..."
-    sed -i 's/DB_USERNAME=root/DB_USERNAME=orbitdocs/g' .env
-fi
-
-# Fix DB_PASSWORD in .env (only if empty)
-if grep -q "DB_PASSWORD=$" .env; then
-    echo "Updating DB_PASSWORD to 'secret'..."
-    sed -i 's/DB_PASSWORD=/DB_PASSWORD=secret/g' .env
-fi
-
-# Install Composer dependencies if missing
-if [ ! -d "vendor" ]; then
-    echo "Installing Composer dependencies..."
-    composer install --no-interaction --optimize-autoloader
-fi
-
-# Generate key if missing or empty
-if [ -f .env ] && ! grep -q "^APP_KEY=base64" .env; then
-    echo "Generating Application Key..."
-    php artisan key:generate
-fi
-
-# Wait for MySQL (simple sleep to avoid initial connection failure)
-echo "Waiting for Database..."
-sleep 10
-
-# Run Migrations with Retry Logic
-echo "Running Migrations..."
-max_retries=30
-count=0
-until php artisan migrate --force; do
-    exit_code=$?
-    count=$((count + 1))
-    if [ $count -ge $max_retries ]; then
-        echo "Migration failed after $count attempts. Exiting."
-        exit $exit_code
+    # Create storage symlink
+    if [ ! -L /var/www/public/storage ]; then
+        cd /var/www && php artisan storage:link --force 2>/dev/null || true
     fi
-    echo "Migration failed (Attempt $count/$max_retries). Retrying in 5 seconds..."
-    sleep 5
-done
 
-# Create Storage Link (Force remove first to avoid exists error if it's a broken link)
-if [ -L "public/storage" ]; then
-    rm "public/storage"
-elif [ -d "public/storage" ]; then
-    rm -rf "public/storage"
+    # Mark as initialized
+    touch "$MARKER_FILE"
+}
+
+# Run migrations in background so php-fpm starts immediately
+if [ ! -f "$MARKER_FILE" ]; then
+    echo "[OrbitDocs] Running first-time setup in background..."
+    run_migrations &
+else
+    # On subsequent deploys: run migrations quickly in background
+    echo "[OrbitDocs] Running any pending migrations in background..."
+    run_migrations &
 fi
 
-echo "Creating Storage Link..."
-php artisan storage:link
-
-# Install NPM dependencies and build if missing
-if [ ! -d "node_modules" ] || [ ! -d "public/build" ]; then
-    echo "Building Frontend Assets..."
-    npm install
-    npm run build
-fi
-
-# Cache configuration if .env is valid (skip if it's the default dummy env)
-# php artisan config:cache
-
-# Fix permissions for storage and bootstrap/cache (critical for log files created by root)
-echo "Fixing permissions..."
-chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-# Ensure .env is writable by the web server (for installer)
-if [ -f .env ]; then
-    chown www-data:www-data .env
-    chmod 664 .env
-fi
-
-echo "OrbitDocs is ready."
+echo "[OrbitDocs] Starting php-fpm..."
 exec "$@"

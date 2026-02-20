@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="8">
+    <title>OrbitDocs – Starting Up</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 480px;
+            padding: 2rem;
+        }
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6366f1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #1e293b;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 0.75rem;
+        }
+        p {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+        .badge {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.35rem 0.85rem;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #6366f1;
+            animation: pulse 1.5s ease-in-out infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⬡ OrbitDocs</div>
+        <div class="spinner"></div>
+        <h1>Application Starting Up</h1>
+        <p>The server is initialising. This usually takes under a minute on first boot.<br>This page will refresh automatically.</p>
+        <div class="badge"><span class="dot"></span>Auto-refreshing every 8 seconds…</div>
+    </div>
+</body>
+</html>

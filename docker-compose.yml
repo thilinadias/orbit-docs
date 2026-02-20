@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 services:
   app:
     build:
@@ -17,7 +17,14 @@ services:
     networks:
       - orbitdocs-network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "php-fpm -t && echo ok || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   web:
     image: nginx:alpine
@@ -29,12 +36,14 @@ services:
     volumes:
       - orbitdocs_app:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./docker/nginx/maintenance:/etc/nginx/maintenance
       - orbitdocs_ssl:/etc/nginx/ssl
       - orbitdocs_data:/var/www/storage/app
     networks:
       - orbitdocs-network
     depends_on:
-      - app
+      app:
+        condition: service_started
 
   db:
     image: mysql:8.0
@@ -51,6 +60,12 @@ services:
       - orbitdocs_db:/var/lib/mysql
     networks:
       - orbitdocs-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-secret}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   redis:
     image: redis:alpine
@@ -58,6 +73,11 @@ services:
     restart: unless-stopped
     networks:
       - orbitdocs-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 networks:
   orbitdocs-network:
