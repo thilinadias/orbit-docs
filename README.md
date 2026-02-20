@@ -173,3 +173,17 @@ All migrations are automatically run before each test using the `RefreshDatabase
 ## License
 
 This project is licensed under the Apache 2.0 License.
+
+## Few glimpses inside the system
+
+<img width="1886" height="943" alt="1" src="https://github.com/user-attachments/assets/8f8aeee5-bbf6-4aa5-a0bd-0385a03b94e4" />
+<img width="1912" height="945" alt="2" src="https://github.com/user-attachments/assets/b810b307-22f0-4d75-bb44-8250eaa289cf" />
+<img width="1915" height="949" alt="3" src="https://github.com/user-attachments/assets/ddbd7b6d-27a7-4444-8a51-941fe96aa45f" />
+<img width="1916" height="951" alt="4" src="https://github.com/user-attachments/assets/29bb6153-320d-468b-a6cf-e615eebd989b" />
+<img width="1921" height="945" alt="5" src="https://github.com/user-attachments/assets/c52546cc-d9cd-4172-b210-aface9d6ed99" />
+<img width="1916" height="950" alt="6" src="https://github.com/user-attachments/assets/1878956a-f4ea-4f94-ac01-d91f2618e9cc" />
+<img width="1916" height="953" alt="7" src="https://github.com/user-attachments/assets/12e6d967-9b07-43b8-ba60-594ac7bcf42b" />
+<img width="1917" height="948" alt="8" src="https://github.com/user-attachments/assets/0eab0d2a-390f-4df5-ac90-f6028e62b822" />
+<img width="1918" height="948" alt="9" src="https://github.com/user-attachments/assets/0c2ce785-4f99-4174-bbd6-8bf3e0f71945" />
+<img width="1918" height="954" alt="10" src="https://github.com/user-attachments/assets/8cb02f69-13d7-4d13-ad6b-7eff9fd744cb" />
+
