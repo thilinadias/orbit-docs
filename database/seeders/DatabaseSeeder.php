@@ -42,10 +42,10 @@ class DatabaseSeeder extends Seeder
         // $adminRole = Role::where('name', 'Admin')->first();
         // $org->users()->attach($user->id, ['role_id' => $adminRole->id]);
 
-        // Asset Types
+        // Asset Types — use firstOrCreate so re-running the seeder is safe
         $types = ['Server', 'Workstation', 'Firewall', 'Switch', 'License', 'Domain'];
         foreach ($types as $type) {
-            AssetType::create(['name' => $type]);
+            AssetType::firstOrCreate(['name' => $type]);
         }
     }
 }

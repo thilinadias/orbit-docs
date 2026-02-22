@@ -92,7 +92,7 @@ class InstallController extends Controller
 
     public function runMigrations()
     {
-        // Remove all PHP execution time limits — migrations can take 60-120 seconds
+        // Remove all PHP execution time limits - migrations can take 60-120s
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         ignore_user_abort(true);
@@ -101,24 +101,17 @@ class InstallController extends Controller
             \Illuminate\Support\Facades\Auth::logout();
             \Illuminate\Support\Facades\Session::flush();
 
-            // Safe DB wipe: migrate:fresh runs a bulk DROP TABLE without IF EXISTS.
-            // MySQL fails the whole statement if any listed table does not exist.
-            // Fix: query what actually exists and drop each table individually.
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
-            $existingTables = DB::select('SHOW TABLES');
-            foreach ($existingTables as $row) {
-                $tableName = array_values((array) $row)[0];
-                DB::statement("DROP TABLE IF EXISTS `{$tableName}`");
-            }
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
-
-            // Run migrations first, then seeder separately so each step is clear in logs
+            // The container entrypoint auto-runs migrations before PHP-FPM starts,
+            // so by the time the installer is reached all tables already exist.
+            // Running migrate here is a fast no-op; we just need to seed.
+            // Dropping and re-running all migrations from scratch caused fragile
+            // edge-cases in older migration files not designed for a cold start.
             Artisan::call('migrate', ['--force' => true]);
-            Artisan::call('db:seed', ['--force' => true]);
+            Artisan::call('db:seed',  ['--force' => true]);
 
             return response()->json([
-                'success'  => true,
-                'message'  => 'Migrations and Seeding completed successfully.',
+                'success' => true,
+                'message' => 'Setup completed successfully.',
             ])->header('X-Accel-Buffering', 'no');
 
         } catch (\Exception $e) {
