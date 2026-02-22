@@ -92,13 +92,18 @@ class InstallController extends Controller
 
     public function runMigrations()
     {
+        // Remove all PHP execution time limits — migrations can take 60-120 seconds
+        set_time_limit(0);
+        ini_set('max_execution_time', 0);
+        ignore_user_abort(true);
+
         try {
-            // Ensure no stale session exists which might cause ActivityLog to blame a non-existent user
             \Illuminate\Support\Facades\Auth::logout();
             \Illuminate\Support\Facades\Session::flush();
 
-            // Safe DB wipe: migrate:fresh uses bulk DROP TABLE without IF EXISTS.
-            // MySQL fails if any table is missing. Fix: query what exists and drop each individually.
+            // Safe DB wipe: migrate:fresh runs a bulk DROP TABLE without IF EXISTS.
+            // MySQL fails the whole statement if any listed table does not exist.
+            // Fix: query what actually exists and drop each table individually.
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
             $existingTables = DB::select('SHOW TABLES');
             foreach ($existingTables as $row) {
@@ -106,10 +111,17 @@ class InstallController extends Controller
                 DB::statement("DROP TABLE IF EXISTS `{$tableName}`");
             }
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
-            Artisan::call('migrate', ['--force' => true, '--seed' => true]);
-            return response()->json(['success' => true, 'message' => 'Migrations and Seeding completed successfully.'])->header('X-Accel-Buffering', 'no');
-        }
-        catch (\Exception $e) {
+
+            // Run migrations first, then seeder separately so each step is clear in logs
+            Artisan::call('migrate', ['--force' => true]);
+            Artisan::call('db:seed', ['--force' => true]);
+
+            return response()->json([
+                'success'  => true,
+                'message'  => 'Migrations and Seeding completed successfully.',
+            ])->header('X-Accel-Buffering', 'no');
+
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
