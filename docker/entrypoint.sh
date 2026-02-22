@@ -25,6 +25,18 @@ rsync -a --delete \
 log "Code sync complete."
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STEP 1b: Ensure required runtime directories exist on the volume
+# rsync excludes bootstrap/cache and storage to preserve data, but these dirs
+# must physically exist before any PHP/artisan command can run.
+# ─────────────────────────────────────────────────────────────────────────────
+mkdir -p /var/www/bootstrap/cache
+mkdir -p /var/www/storage/framework/sessions
+mkdir -p /var/www/storage/framework/views
+mkdir -p /var/www/storage/framework/cache
+mkdir -p /var/www/storage/logs
+mkdir -p /var/www/storage/app/public
+
+# ─────────────────────────────────────────────────────────────────────────────
 # STEP 2: Ensure .env exists and has correct Docker values
 # ─────────────────────────────────────────────────────────────────────────────
 if [ ! -f /var/www/.env ]; then
