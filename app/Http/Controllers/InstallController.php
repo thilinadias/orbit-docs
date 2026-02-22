@@ -92,7 +92,6 @@ class InstallController extends Controller
 
     public function runMigrations()
     {
-        // Remove all PHP execution time limits - migrations can take 60-120s
         set_time_limit(0);
         ini_set('max_execution_time', 0);
         ignore_user_abort(true);
@@ -101,11 +100,17 @@ class InstallController extends Controller
             \Illuminate\Support\Facades\Auth::logout();
             \Illuminate\Support\Facades\Session::flush();
 
-            // The container entrypoint auto-runs migrations before PHP-FPM starts,
-            // so by the time the installer is reached all tables already exist.
-            // Running migrate here is a fast no-op; we just need to seed.
-            // Dropping and re-running all migrations from scratch caused fragile
-            // edge-cases in older migration files not designed for a cold start.
+            // Always wipe the database completely before running migrations.
+            // This handles the common case where a previous failed install left
+            // the DB in an inconsistent state (tables exist but migrations table
+            // is missing entries), which causes "Duplicate column" errors.
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            foreach (DB::select('SHOW TABLES') as $row) {
+                $t = array_values((array) $row)[0];
+                DB::statement("DROP TABLE IF EXISTS `{$t}`");
+            }
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
             Artisan::call('migrate', ['--force' => true]);
             Artisan::call('db:seed',  ['--force' => true]);
 
@@ -115,7 +120,7 @@ class InstallController extends Controller
             ])->header('X-Accel-Buffering', 'no');
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => ->getMessage()], 500);
         }
     }
 
