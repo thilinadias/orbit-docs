@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -97,9 +97,17 @@ class InstallController extends Controller
             \Illuminate\Support\Facades\Auth::logout();
             \Illuminate\Support\Facades\Session::flush();
 
-            Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
-            // Output might be captured if we want to show it
-            return response()->json(['success' => true, 'message' => 'Migrations and Seeding completed successfully.']);
+            // Safe DB wipe: migrate:fresh uses bulk DROP TABLE without IF EXISTS.
+            // MySQL fails if any table is missing. Fix: query what exists and drop each individually.
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            $existingTables = DB::select('SHOW TABLES');
+            foreach ($existingTables as $row) {
+                $tableName = array_values((array) $row)[0];
+                DB::statement("DROP TABLE IF EXISTS `{$tableName}`");
+            }
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            Artisan::call('migrate', ['--force' => true, '--seed' => true]);
+            return response()->json(['success' => true, 'message' => 'Migrations and Seeding completed successfully.'])->header('X-Accel-Buffering', 'no');
         }
         catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
