@@ -43,5 +43,6 @@ class CheckOrganizationAccess
         }
 
         abort(403, 'Unauthorized access to this organization.');
+        return response('', 403);
     }
 }
