@@ -16,15 +16,22 @@
    ```bash
    docker-compose up -d --build
    ```
-   > **Note:** The `--build` flag is crucial for the first run to ensure the application image is built locally. If you omit it, Docker may try to pull a non-existent image and fail.
+   > **Note:** The `--build` flag is crucial for the first run to ensure the application image is built locally. 
 
-3. **Wait for Initialization**
-   The first run will take a few minutes to install dependencies (PHP & Node.js), run migrations, and build assets.
-   You can verify it's working by checking the logs:
+3. **Access the Web Installer**
+   Navigate to `http://localhost` (or your server's IP). OrbitDocs features a robust web-based installer that will:
+   - Verify your environment requirements.
+   - **Automatically create your database** if it doesn't exist.
+   - Run system migrations and initial seeding (with 5-minute timeout protection).
+   - Guide you through creating your first Admin account and Organization.
+
+4. **Verify Deployment**
+   If you encounter issues, you can follow the setup progress via logs:
    ```bash
    docker-compose logs -f app
    ```
-   Once you see **"OrbitDocs is ready"**, the app is live.
+   Once the installer finishes, you will be redirected to the login page.
 
-4. **Access Application**
-   Visit `http://localhost:8000`
+## Access Application
+- **URL:** `http://localhost`
+- **Default Port:** 80 (standard HTTP)

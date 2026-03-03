@@ -16,6 +16,17 @@
 - **Activity Logs**: Audit trail for all changes.
 - **Modern UI**: Clean, dark-mode compatible interface built with TailwindCSS and Alpine.js.
 
+## Recent Updates (March 2026)
+
+### Installer & Action Fixes (v1.6 — Mar 03 2026)
+
+Enhanced the first-time setup experience and resolved UI action failures:
+
+- **Installer Robustness Overhaul:** The web installer now automatically creates the database (`CREATE DATABASE IF NOT EXISTS`) if it doesn't exist.
+- **Migration Timeout Prevention:** Increased the PHP execution time limit to **300s** for migration and seeding tasks to support slower hardware.
+- **Resilient `.env` Setup:** Improved environment variable writing logic with automatic `.env.example` fallback and permission checks.
+- **Fixed Asset Actions:** Re-engineered the Edit and Delete buttons in the Asset management module, resolving an issue where they were non-functional.
+
 ## Recent Updates (February 2026)
 
 ### Document Management & Metadata Scaling (v1.5 — Feb 25 2026)
@@ -115,9 +126,9 @@ OrbitDocs is designed to be installed easily using Docker. This method includes 
 
     | Step | What It Does |
     |---|---|
-    | 1. **Welcome** | Checks PHP extensions and directory permissions |
-    | 2. **Database** | Verifies your MySQL connection (pre-filled for Docker) |
-    | 3. **System Setup** | Runs `migrate:fresh` + `db:seed` in the background — progress is polled live |
+    | 1. **Welcome** | Checks PHP extensions and directory permissions (including `.env` writability) |
+    | 2. **Database** | Verifies your MySQL connection and **auto-creates the database** if missing |
+    | 3. **System Setup** | Runs `migrate:fresh` + `db:seed` with extended 5-minute timeout protection |
     | 4. **Admin Account** | Creates your super-admin user |
     | 5. **Organization** | Creates your first workspace (client/department) |
     | 6. **Network** | Choose IP or custom domain, optional SSL upload |
