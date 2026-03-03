@@ -92,48 +92,51 @@ A comprehensive overhaul of the Docker deployment pipeline to make production de
 
 ---
 
-## Installation via Docker (Recommended)
+## 🚀 Fresh Installation Guide
 
-OrbitDocs is designed to be installed easily using Docker. This method includes a built-in **Web Installer** that guides you through the setup process.
+OrbitDocs is designed to be installed easily using Docker. We provide two ways to complete your setup:
 
-### Prerequisites
+### 1. Prerequisites
+- Docker Engine & Docker Compose
+- 5-10 minutes of time
 
-- Docker Engine
-- Docker Compose
+### 2. Initialization
+```bash
+git clone https://github.com/thilinadias/orbit-docs.git
+cd orbit-docs
+docker-compose up -d --build
+```
+> The system will take a moment to initialize MySQL and set up environment dependencies. You can watch the progress with: `docker-compose logs -f app`.
 
-### Quick Start (New Installation)
+---
 
-1.  **Clone the Repository**
-    ```bash
-    git clone https://github.com/thilinadias/orbit-docs.git
-    cd orbit-docs
-    ```
+### 3. Complete Your Setup (Choose One Option)
 
-2.  **Build and Start**
-    ```bash
-    docker-compose up -d --build
-    ```
-    The containers will start. The app automatically:
-    - Waits for MySQL to become healthy before starting
-    - Sets up the `.env` file with Docker service names
-    - Generates `APP_KEY` if not already set
-    - Shows a branded loading page while initialising (instead of a 502 error)
+#### Option A: Full GUI Wizard (Recommended)
+1. Navigate to `http://<your-server-ip>` in your browser.
+2. The **Step-by-Step Wizard** will guide you through:
+   - Environment verification (Automatic)
+   - Database Setup (**Auto-creates your database**)
+   - System Setup (Migrations & Seeding)
+   - Admin Account Creation
+   - First Organization Setup
+   - Network/SSL Configuration
 
-    > On a **fresh install**, the entrypoint skips database migrations — the installer wizard handles that.
+#### Option B: Terminal-First Setup (Recommended for slower devices)
+If you prefer the command line or have a slower server, you can run the "heavy lifting" (Database creation & migrations) via terminal:
+```bash
+# Run the robust CLI installer
+docker-compose exec app php artisan orbit:install
+```
+**After the command finishes:**
+Navigate to `http://<your-server-ip>/install/admin` to complete your Admin Account and Organization setup via the GUI.
 
-3.  **Access the Setup Wizard**
-    Open your browser and navigate to `http://<your-server-ip>`. The wizard walks you through 6 steps:
+---
 
-    | Step | What It Does |
-    |---|---|
-    | 1. **Welcome** | Checks PHP extensions and directory permissions (including `.env` writability) |
-    | 2. **Database** | Verifies your MySQL connection and **auto-creates the database** if missing |
-    | 3. **System Setup** | Runs `migrate:fresh` + `db:seed` with extended 5-minute timeout protection |
-    | 4. **Admin Account** | Creates your super-admin user |
-    | 5. **Organization** | Creates your first workspace (client/department) |
-    | 6. **Network** | Choose IP or custom domain, optional SSL upload |
+### 4. Direct Login
+Once setup is complete, you can log in at: `http://<your-server-ip>/login`.
 
-    After step 6, you're redirected to the login page. Sign in with the admin credentials you just created.
+> **Note:** If you used the CLI seeder for testing, the default credentials are `admin@orbitdocs.com` / `password`.
 
 ### Updating Existing Installations
 
