@@ -82,6 +82,17 @@ class InstallController extends Controller
             $progressPath = storage_path('app/install_progress.json');
             file_put_contents($progressPath, json_encode(['progress' => 10, 'status' => 'Updating environment...']));
 
+            // Before testing the connection, we ensure the database exists.
+            try {
+                $dsn = "mysql:host={$request->db_host};port={$request->db_port}";
+                $pdo = new \PDO($dsn, $request->db_username, $request->db_password);
+                $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$request->db_database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+            }
+            catch (\Exception $e) {
+            // Ignore failure here; migrate:fresh will fail clearly if DB is missing
+            }
+
             // Update .env
             $this->updateEnvironmentFile([
                 'DB_HOST' => $request->db_host,
@@ -96,6 +107,10 @@ class InstallController extends Controller
             Artisan::call('config:clear');
 
             file_put_contents($progressPath, json_encode(['progress' => 50, 'status' => 'Running migrations... This might take a moment.']));
+
+            // Increase time limit for migrations
+            set_time_limit(300);
+
             // Run migrations
             Artisan::call('migrate:fresh', ['--force' => true]);
 
@@ -126,17 +141,26 @@ class InstallController extends Controller
     {
         $path = base_path('.env');
 
+        if (!file_exists($path) && file_exists(base_path('.env.example'))) {
+            copy(base_path('.env.example'), $path);
+        }
+
         if (file_exists($path)) {
             $currentEnv = file_get_contents($path);
 
             foreach ($data as $key => $value) {
+                // Ensure the value is quoted if it contains spaces or special characters
+                if (str_contains($value, ' ') && !str_starts_with($value, '"')) {
+                    $value = "\"{$value}\"";
+                }
+
                 // Check if key exists
                 if (preg_match("/^{$key}=/m", $currentEnv)) {
-                    $currentEnv = preg_replace("/^{$key}=.*/m", "{$key}=\"{$value}\"", $currentEnv);
+                    $currentEnv = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $currentEnv);
                 }
                 else {
                     // Append if not exists
-                    $currentEnv .= "\n{$key}=\"{$value}\"";
+                    $currentEnv .= "\n{$key}={$value}";
                 }
             }
 
