@@ -22,7 +22,7 @@ class InstallController extends Controller
             'PDO Extension' => extension_loaded('pdo'),
             'Tokenizer Extension' => extension_loaded('tokenizer'),
             'XML Extension' => extension_loaded('xml'),
-            '.env Writable' => is_writable(base_path('.env')),
+            '.env Writable' => is_writable(base_path('.env')) || is_writable(base_path()),
             'storage Writable' => is_writable(storage_path()),
             'bootstrap/cache Writable' => is_writable(base_path('bootstrap/cache')),
         ];
